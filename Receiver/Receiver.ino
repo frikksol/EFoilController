@@ -15,6 +15,7 @@ void RisingInterrupt()
 {
   receiver.UpdateMotorPowerStatusRising();
   attachInterrupt(0, FallingInterrupt, FALLING);
+  //TestComment
 }
 
 void FallingInterrupt()
