@@ -21,39 +21,39 @@ void ReceiverController::setup()
     digitalWrite(motorPowerRelayPin, LOW);
     digitalWrite(motorPowerServoPin, LOW);
 
-    attachInterrupt(0, UpdateMotorPowerStatusRising, RISING);
+    //TEMP
+    motorPowerStatus = true;
 }
 
 void ReceiverController::loop()
 {
     if (motorPowerStatus)
     {
-        AnalogWrite(motorPowerServoPin, CalculateMovingAverage(AnalogRead(receiverPin)));
+        digitalWrite(motorPowerServoPin, CalculateMovingAverage(analogRead(receiverPin)));
     }
 }
 
 void ReceiverController::UpdateMotorPowerStatusRising()
 {
     motorPowerPreviousTimeValue = micros();
-    attachInterrupt(0, UpdateMotorPowerStatusFalling, FALLING);
 }
 
 void ReceiverController::UpdateMotorPowerStatusFalling()
 {
-    if ((micros() - switchOnTime) > hallEffectSensorOnTimeLimit)
+    if ((micros() - motorPowerPreviousTimeValue) > hallEffectSensorOnTimeLimit)
     {
         if (motorPowerStatus)
         {
             motorPowerStatus = false;
-            motorPowerLedPin = LOW;
-            motorPowerRelayPin = LOW;
+            digitalWrite(motorPowerLedPin, LOW);
+            digitalWrite(motorPowerRelayPin, LOW);
             EmergencyBrake();
         }
         else
         {
             motorPowerStatus = true;
-            motorPowerLedPin = HIGH;
-            motorPowerRelayPin = HIGH;
+            digitalWrite(motorPowerLedPin, HIGH);
+            digitalWrite(motorPowerRelayPin, HIGH);
         }
     }
 }
