@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <SoftwareSerial.h>
 
 class TransmitterController
 {
@@ -11,12 +12,11 @@ private:
     const int powerLedPin = 3;
     const int deadMansButtonPin = 4;
     const int throttlePin = A1; //Analog
-    const int transmitterPin = A0;
-
-    const int signalLowTime = 20; //This is in millis
+    const int bluetoothTxPin = 10;
+    const int bluetoothRxPin = 11;
 
     unsigned int throttleReading = 0;
-    unsigned int previousThrottleReading = 0;
-    unsigned int CalculateSignalHighTimeForRegularOperation();
-    unsigned int CalculateSignalHighTime(double maximumThrottleIncreasePerSample);
+    void SendThrottleReading();
+    void SendThrottleReading(unsigned int reading);
+    SoftwareSerial BTSerial = SoftwareSerial(bluetoothTxPin, bluetoothRxPin);
 };

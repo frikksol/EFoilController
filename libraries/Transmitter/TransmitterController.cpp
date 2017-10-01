@@ -1,6 +1,8 @@
 #include "TransmitterController.h"
 
-TransmitterController::TransmitterController(){}
+TransmitterController::TransmitterController()
+{
+}
 
 void TransmitterController::setup()
 {
@@ -8,11 +10,12 @@ void TransmitterController::setup()
     pinMode(deadMansButtonPin, INPUT);
     pinMode(throttlePin, INPUT);
     pinMode(powerLedPin, OUTPUT);
-    pinMode(transmitterPin, OUTPUT);
 
     // Set initial IO states
     digitalWrite(powerLedPin, HIGH);
-    digitalWrite(transmitterPin, LOW);
+
+    //Start BlueTooth communication
+    BTSerial.begin(38400);
 }
 
 void TransmitterController::loop()
@@ -23,59 +26,30 @@ void TransmitterController::loop()
     //Send Data 
     if (digitalRead(deadMansButtonPin))
     {
-        digitalWrite(transmitterPin, HIGH);
-        delayMicroseconds(CalculateSignalHighTimeForRegularOperation());
-        digitalWrite(transmitterPin, LOW);
-        delay(signalLowTime);
+        SendThrottleReading();
     }
     else
     {
-        throttleReading = 1023/2; //Half throttle should mean 0 speed
-        const double emergencyStopThrottleIncrease {50}; //TODO Find right number
-        digitalWrite(transmitterPin, HIGH);
-        delayMicroseconds(CalculateSignalHighTime(emergencyStopThrottleIncrease));
-        digitalWrite(transmitterPin, LOW);
-        delay(signalLowTime);
+        const int zeroSpeed = 510;
+        SendThrottleReading(zeroSpeed);
     }
 }
 
-unsigned int TransmitterController::CalculateSignalHighTimeForRegularOperation()
+void TransmitterController::SendThrottleReading()
 {
-    const double maximumThrottleIncreasePerSample = 15; //TODO Find right number
-    return CalculateSignalHighTime(maximumThrottleIncreasePerSample);
+    SendThrottleReading(throttleReading);
 }
 
-unsigned int TransmitterController::CalculateSignalHighTime(double maximumThrottleIncreasePerSample)
+void TransmitterController::SendThrottleReading(unsigned int reading)
 {
-    const unsigned int maximumThrottleValue = 1023;
-    const unsigned int pwmBaseValue = 1000;
-    const unsigned int deltaPwm = 1000;
+    const char messageStart = 'S';
+    const char messageEnd = 'E';
+    String messageBuffer = String(reading);
 
-    double deltaReading = throttleReading - previousThrottleReading;
-    if (abs(deltaReading) > maximumThrottleIncreasePerSample)
+    BTSerial.write(messageStart);
+    for (int character = 0; character < messageBuffer.length(); character++)
     {
-        if (deltaReading < 0)
-        {
-            deltaReading = -maximumThrottleIncreasePerSample;
-        }
-        else
-        {
-            deltaReading = maximumThrottleIncreasePerSample;
-        }
+        BTSerial.write(messageBuffer[character]);
     }
-
-    throttleReading = previousThrottleReading + round(deltaReading);
-    if (throttleReading < 0)
-    {
-        throttleReading = 0;
-    }
-    if (throttleReading > deltaPwm)
-    {
-        throttleReading = deltaPwm;
-    }
-    double pwm = ((throttleReading / maximumThrottleValue) * deltaPwm) + pwmBaseValue;
-    previousThrottleReading = throttleReading;
-
-    return round(pwm); //This is in micros
+    BTSerial.write(messageEnd);
 }
-

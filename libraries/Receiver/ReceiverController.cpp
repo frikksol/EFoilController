@@ -5,21 +5,20 @@ ReceiverController::ReceiverController(){}
 void ReceiverController::setup()
 {
     // Set all IO
-    pinMode(receiverPin, INPUT);
     pinMode(hallEffectSensorPin, INPUT);
     pinMode(powerLedPin, OUTPUT);
     pinMode(motorPowerLedPin, OUTPUT);
     pinMode(motorPowerRelayPin, OUTPUT);
     pinMode(motorPowerServoPin, OUTPUT);
 
-    //Initialize averaging list
-    InitializeAveragingList(analogRead(receiverPin));
-
     //Set inital values for outputs
     digitalWrite(powerLedPin, HIGH);
     digitalWrite(motorPowerLedPin, LOW);
     digitalWrite(motorPowerRelayPin, LOW);
     digitalWrite(motorPowerServoPin, LOW);
+
+    //Start BlueTooth communication
+    BTSerial.begin(38400);
 
     //TEMP
     motorPowerStatus = true;
@@ -29,64 +28,107 @@ void ReceiverController::loop()
 {
     if (motorPowerStatus)
     {
-        digitalWrite(motorPowerServoPin, CalculateMovingAverage(analogRead(receiverPin)));
+        ReadNewThrottleValue();
+        digitalWrite(motorPowerLedPin, HIGH);
     }
-}
-
-void ReceiverController::UpdateMotorPowerStatusRising()
-{
-    motorPowerPreviousTimeValue = micros();
-}
-
-void ReceiverController::UpdateMotorPowerStatusFalling()
-{
-    if ((micros() - motorPowerPreviousTimeValue) > hallEffectSensorOnTimeLimit)
+    else
     {
-        if (motorPowerStatus)
+        signalHighTime = 0;
+        digitalWrite(motorPowerLedPin, LOW);
+    }
+
+}
+
+void ReceiverController::ReadNewThrottleValue()
+{
+    const char messageStart = 'S';
+    const char messageEnd = 'E';
+    String receivedString = "";
+    while (BTSerial.available() > 0)
+    {
+        int receivedChar = BTSerial.read();
+        if (receivedChar == messageStart)
         {
-            motorPowerStatus = false;
-            digitalWrite(motorPowerLedPin, LOW);
-            digitalWrite(motorPowerRelayPin, LOW);
-            EmergencyBrake();
+            receivedString = "";
         }
-        else
+        else if (isDigit(receivedChar))
         {
-            motorPowerStatus = true;
-            digitalWrite(motorPowerLedPin, HIGH);
-            digitalWrite(motorPowerRelayPin, HIGH);
+            receivedString += (char)receivedChar;
+        }
+        else if (receivedChar == messageEnd)
+        {
+            //TODO Extract to function!
+            const double minimumValue = 100;
+            const double middleValue = 510;
+            const double maximumValue = 900;
+            const double deadband = 30;
+
+            int received = receivedString.toDouble();
+            if (received < minimumValue)
+            {
+                break;
+                //received = minimumValue;
+            }
+            if ((received > middleValue - deadband) && (received < middleValue + deadband))
+            {
+                received = middleValue;
+            }
+            if (received > maximumValue)
+            {
+                break;
+                //received = maximumValue;
+            }
+
+            double receivedConverted = (received - minimumValue) / (maximumValue - minimumValue) * pwmBaseValue;
+            double currentPwm = signalHighTime - pwmBaseValue;
+            double increase = receivedConverted - currentPwm;
+            const double increaseLimit = 2;
+
+            if (abs(increase) > increaseLimit)
+            {
+                if (increase < 0)
+                {
+                    currentPwm -= increaseLimit;
+                }
+                else
+                {
+                    currentPwm += increaseLimit;
+                }
+            }
+            else
+            {
+                currentPwm += increase;
+            }
+
+            if (currentPwm < 0)
+            {
+                currentPwm = 0;
+            }
+            if (currentPwm > pwmBaseValue)
+            {
+                currentPwm = pwmBaseValue;
+            }
+            signalHighTime = currentPwm + pwmBaseValue;
+
+            receivedString = "";
         }
     }
 }
 
-void ReceiverController::InitializeAveragingList(unsigned int initializerValue)
+void ReceiverController::Interrupt()
 {
-    for (int i = 0; i < averagingListSize; i++)
+    numberOfTicksSinceLastFlank++;
+    double currentWait = numberOfTicksSinceLastFlank * numberOfMicrosPerTick;
+    if (signalIsHigh && (currentWait >= signalHighTime))
     {
-        averagingList[i] = initializerValue;
+        digitalWrite(motorPowerServoPin, LOW);
+        signalIsHigh = false;
+        numberOfTicksSinceLastFlank = 0;
     }
-}
-
-bool ReceiverController::CalculateMovingAverage(unsigned int rawSignal)
-{
-    const unsigned int threshold {300};
-    unsigned int averaged {0};
-    averagingList[averagingListIterator] = rawSignal;
-    averagingListIterator++;
-    if ( averagingListIterator >= averagingListSize)
+    else if (!signalIsHigh && (currentWait >= signalLowTime))
     {
-        averagingListIterator = 0;
+        digitalWrite(motorPowerServoPin, HIGH);
+        signalIsHigh = true;
+        numberOfTicksSinceLastFlank = 0;
     }
-
-    for (int i = 0; i > averagingListIterator; i++)
-    {
-        averaged += averagingList[i];
-    }
-    averaged /= averagingListSize;
-
-    return averaged > threshold;
-}
-
-void ReceiverController::EmergencyBrake()
-{
-    //TODO implement this
 }
