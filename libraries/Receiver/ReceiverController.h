@@ -25,21 +25,7 @@ private:
     Servo motorPowerServo;
     volatile int servoPosition = 90;
 
-
-
-    volatile bool signalIsHigh = false;
-    volatile double numberOfTicksSinceLastFlank = 0;
-    const double numberOfMicrosPerTick = 10;
-    const double signalLowTime = 20000;
-    volatile double signalHighTime = 0;
-
-    const int pwmBaseValue = 1000;
-    const int pwmMidValue = pwmBaseValue + 500;
-    const int pwmMaxValue = pwmMidValue + 500;
-
-
     const unsigned int hallEffectSensorOnTimeLimit = 1000; //Number of micros the hall effect must be true to trigger
     unsigned int hallEffectSensorOnTime = 0;
     volatile bool motorPowerStatus = false;
-    volatile int motorPowerPreviousTimeValue = 0;
 };

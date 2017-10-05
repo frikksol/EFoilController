@@ -10,7 +10,6 @@ void ReceiverController::setup()
     pinMode(motorPowerLedPin, OUTPUT);
     pinMode(motorPowerRelayPin, OUTPUT);
     motorPowerServo.attach(motorPowerServoPin);
-    //pinMode(motorPowerServoPin, OUTPUT);
 
     //Set inital values for outputs
     digitalWrite(powerLedPin, HIGH);
@@ -22,7 +21,7 @@ void ReceiverController::setup()
     BTSerial.begin(38400);
 
     //TEMP
-    motorPowerStatus = true;
+    motorPowerStatus = true; // TODO remove this when magnet switch is added
 }
 
 void ReceiverController::loop()
@@ -34,7 +33,6 @@ void ReceiverController::loop()
     }
     else
     {
-        signalHighTime = 0;
         digitalWrite(motorPowerLedPin, LOW);
     }
 
