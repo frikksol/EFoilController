@@ -9,7 +9,8 @@ void ReceiverController::setup()
     pinMode(powerLedPin, OUTPUT);
     pinMode(motorPowerLedPin, OUTPUT);
     pinMode(motorPowerRelayPin, OUTPUT);
-    pinMode(motorPowerServoPin, OUTPUT);
+    motorPowerServo.attach(motorPowerServoPin);
+    //pinMode(motorPowerServoPin, OUTPUT);
 
     //Set inital values for outputs
     digitalWrite(powerLedPin, HIGH);
@@ -67,7 +68,6 @@ void ReceiverController::ReadNewThrottleValue()
             if (received < minimumValue)
             {
                 break;
-                //received = minimumValue;
             }
             if ((received > middleValue - deadband) && (received < middleValue + deadband))
             {
@@ -76,39 +76,12 @@ void ReceiverController::ReadNewThrottleValue()
             if (received > maximumValue)
             {
                 break;
-                //received = maximumValue;
             }
 
-            double receivedConverted = (received - minimumValue) / (maximumValue - minimumValue) * pwmBaseValue;
-            double currentPwm = signalHighTime - pwmBaseValue;
-            double increase = receivedConverted - currentPwm;
-            const double increaseLimit = 2;
-
-            if (abs(increase) > increaseLimit)
-            {
-                if (increase < 0)
-                {
-                    currentPwm -= increaseLimit;
-                }
-                else
-                {
-                    currentPwm += increaseLimit;
-                }
-            }
-            else
-            {
-                currentPwm += increase;
-            }
-
-            if (currentPwm < 0)
-            {
-                currentPwm = 0;
-            }
-            if (currentPwm > pwmBaseValue)
-            {
-                currentPwm = pwmBaseValue;
-            }
-            signalHighTime = currentPwm + pwmBaseValue;
+            double receivedConverted = ((received - minimumValue) / (maximumValue - minimumValue)) * 180;
+            int previousPosition = servoPosition;
+            int position = (int) round(receivedConverted);
+            servoPosition = position;
 
             receivedString = "";
         }
@@ -117,18 +90,5 @@ void ReceiverController::ReadNewThrottleValue()
 
 void ReceiverController::Interrupt()
 {
-    numberOfTicksSinceLastFlank++;
-    double currentWait = numberOfTicksSinceLastFlank * numberOfMicrosPerTick;
-    if (signalIsHigh && (currentWait >= signalHighTime))
-    {
-        digitalWrite(motorPowerServoPin, LOW);
-        signalIsHigh = false;
-        numberOfTicksSinceLastFlank = 0;
-    }
-    else if (!signalIsHigh && (currentWait >= signalLowTime))
-    {
-        digitalWrite(motorPowerServoPin, HIGH);
-        signalIsHigh = true;
-        numberOfTicksSinceLastFlank = 0;
-    }
+    motorPowerServo.write(servoPosition);
 }

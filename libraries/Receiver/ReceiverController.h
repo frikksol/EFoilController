@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
+#include <Servo.h>
 
 class ReceiverController
 {
@@ -16,10 +17,14 @@ private:
     const int powerLedPin = 3;
     const int motorPowerLedPin = 4;
     const int motorPowerRelayPin = 5;
-    const int motorPowerServoPin = 6;
+    const int motorPowerServoPin = 9;
 
     SoftwareSerial BTSerial = SoftwareSerial(bluetoothTxPin, bluetoothRxPin);
     void ReadNewThrottleValue();
+
+    Servo motorPowerServo;
+    volatile int servoPosition = 90;
+
 
 
     volatile bool signalIsHigh = false;
