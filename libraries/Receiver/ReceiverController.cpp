@@ -18,7 +18,7 @@ void ReceiverController::setup()
     digitalWrite(motorPowerServoPin, LOW);
 
     //Start BlueTooth communication
-    BTSerial.begin(38400);
+    BTSerial.begin(9600);
 
     //TEMP
     motorPowerStatus = true; // TODO remove this when magnet switch is added

@@ -15,7 +15,7 @@ void TransmitterController::setup()
     digitalWrite(powerLedPin, HIGH);
 
     //Start BlueTooth communication
-    BTSerial.begin(38400);
+    BTSerial.begin(9600);
 }
 
 void TransmitterController::loop()
@@ -45,6 +45,8 @@ void TransmitterController::SendThrottleReading(unsigned int reading)
     const char messageStart = 'S';
     const char messageEnd = 'E';
     String messageBuffer = String(reading);
+
+    delay(100); //TODO Do this with interrupt instead
 
     BTSerial.write(messageStart);
     for (int character = 0; character < messageBuffer.length(); character++)
