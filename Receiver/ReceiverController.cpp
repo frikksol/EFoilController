@@ -18,6 +18,9 @@ void ReceiverController::setup()
 
     //Start BlueTooth communication
     BTSerial.begin(9600);
+
+    //Temp
+    motorPowerStatus = true;
 }
 
 void ReceiverController::loop()
