@@ -19,7 +19,7 @@ void ReceiverController::setup()
 
     //Start BlueTooth communication
     BTSerial.begin(9600);
-
+    
     //TEMP
     motorPowerStatus = true; // TODO remove this when magnet switch is added
 }
@@ -56,37 +56,82 @@ void ReceiverController::ReadNewThrottleValue()
         }
         else if (receivedChar == messageEnd)
         {
-            //TODO Extract to function!
-            const double minimumValue = 100;
-            const double middleValue = 510;
-            const double maximumValue = 900;
-            const double deadband = 30;
-
-            int received = receivedString.toDouble();
-            if (received < minimumValue)
-            {
-                break;
-            }
-            if ((received > middleValue - deadband) && (received < middleValue + deadband))
-            {
-                received = middleValue;
-            }
-            if (received > maximumValue)
-            {
-                break;
-            }
-
-            double receivedConverted = ((received - minimumValue) / (maximumValue - minimumValue)) * 180;
+            int position = ConvertFromBluetoothStringToInt(receivedString);
             int previousPosition = servoPosition;
-            int position = (int) round(receivedConverted);
-            servoPosition = position;
+            int newPosition = LinearizeValue(previousPosition, position);
 
+            servoPosition = newPosition;
             receivedString = "";
         }
     }
 }
 
+int ReceiverController::ConvertFromBluetoothStringToInt(String btString)
+{
+    const double minimumBtValue = 100;
+    const double maximumBtValue = 900;
+    const double maximumIntValue = 180;
+    int received = btString.toDouble();
+    double receivedConverted = ((received - minimumBtValue) / (maximumBtValue - minimumBtValue)) * maximumIntValue;
+    return (int) round(receivedConverted);
+}
+
+int ReceiverController::LinearizeValue(int previousValue, int newValue)
+{
+    const int maximiumIncrease = 10;
+    const int deadband = 10;
+    const int minimumValue = 0;
+    const int middleValue = 90;
+    const int maximumValue = 180;
+
+    //Adjustment as input is shifted wrong
+    newValue -= 10;
+
+    //Adjusting the value for limits
+    if (newValue < minimumValue + 2*deadband)
+    {
+        newValue = minimumValue;
+    }
+    if (newValue > maximumValue - 2*deadband)
+    {
+        newValue = maximumValue;
+    }
+    if((newValue > middleValue - deadband) && (newValue < middleValue + deadband))
+    {
+        newValue = middleValue;
+    }
+
+    //Limiting the increase to be within linearization maximums
+    int increase = newValue - previousValue;
+
+    if (abs(increase) > maximiumIncrease)
+    {
+        if (increase < 0)
+        {
+            increase = -maximiumIncrease;
+        }
+        else
+        {
+            increase = maximiumIncrease;
+        }
+    }
+
+    //Creating the value to return
+    int returnValue = previousValue + increase;
+    if (returnValue < minimumValue)
+    {
+        returnValue = minimumValue;
+    }
+    if (returnValue > maximumValue)
+    {
+        returnValue = maximumValue;
+    }
+
+    return returnValue;
+}
+
 void ReceiverController::Interrupt()
 {
-    motorPowerServo.write(servoPosition);
+    int position = servoPosition;
+    motorPowerServo.write(position);
 }

@@ -21,6 +21,8 @@ private:
 
     SoftwareSerial BTSerial = SoftwareSerial(bluetoothTxPin, bluetoothRxPin);
     void ReadNewThrottleValue();
+    int ConvertFromBluetoothStringToInt(String btString);
+    int LinearizeValue(int previousValue, int newValue);
 
     Servo motorPowerServo;
     volatile int servoPosition = 90;
