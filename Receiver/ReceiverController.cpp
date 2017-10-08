@@ -5,7 +5,6 @@ ReceiverController::ReceiverController(){}
 void ReceiverController::setup()
 {
     // Set all IO
-    pinMode(hallEffectSensorPin, INPUT);
     pinMode(powerLedPin, OUTPUT);
     pinMode(motorPowerLedPin, OUTPUT);
     pinMode(motorPowerRelayPin, OUTPUT);
@@ -19,9 +18,9 @@ void ReceiverController::setup()
 
     //Start BlueTooth communication
     BTSerial.begin(9600);
-    
-    //TEMP
-    motorPowerStatus = true; // TODO remove this when magnet switch is added
+
+    //Temp
+    motorPowerStatus = true;
 }
 
 void ReceiverController::loop()
@@ -130,8 +129,33 @@ int ReceiverController::LinearizeValue(int previousValue, int newValue)
     return returnValue;
 }
 
-void ReceiverController::Interrupt()
+void ReceiverController::UpdateMotorPowerServoInterrupt()
 {
     int position = servoPosition;
     motorPowerServo.write(position);
+}
+
+void ReceiverController::HallEffectSensorTriggeredInterrupt()
+{
+    hallEffectSensorOnTime = millis();
+}
+
+void ReceiverController::HallEffectSensorUntriggeredInterrupt()
+{
+    unsigned long elapsed = millis() - hallEffectSensorOnTime;
+    if (elapsed > hallEffectSensorOnTimeLimit)
+    {
+        if (motorPowerStatus)
+        {
+            motorPowerStatus = false;
+            digitalWrite(motorPowerLedPin, LOW);
+            digitalWrite(motorPowerRelayPin, LOW);
+        }
+        else
+        {
+            motorPowerStatus = true;
+            digitalWrite(motorPowerLedPin, HIGH);
+            digitalWrite(motorPowerRelayPin, HIGH);
+        }
+    }
 }

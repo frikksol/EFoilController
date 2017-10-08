@@ -1,9 +1,33 @@
 #include "ReceiverController.h"
 ReceiverController receiver;
+const int hallEffectSensorPin = 2; //This is also interrupt 0
 
 void setup() {  
   receiver.setup();
+  SetMotorPowerServoInterrupt();
+  attachInterrupt(digitalPinToInterrupt(hallEffectSensorPin), HallEffectSensorTriggeredInterrupt, FALLING);
+}
 
+void loop() {
+  receiver.loop();
+}
+
+//HallEffectSensorInterrupt code
+void HallEffectSensorTriggeredInterrupt()
+{
+  receiver.HallEffectSensorTriggeredInterrupt();
+  attachInterrupt(digitalPinToInterrupt(hallEffectSensorPin), HallEffectSensorUntriggeredInterrupt, RISING);
+
+}
+void HallEffectSensorUntriggeredInterrupt()
+{
+  receiver.HallEffectSensorUntriggeredInterrupt();
+  attachInterrupt(digitalPinToInterrupt(hallEffectSensorPin), HallEffectSensorTriggeredInterrupt, FALLING);
+}
+
+//MotorPowerServoInterrupt code
+void SetMotorPowerServoInterrupt()
+{
   cli();//stop interrupts
 
   //set timer2 interrupt at 8kHz
@@ -22,12 +46,8 @@ void setup() {
   sei();//allow interrupts
 }
 
-void loop() {
-  receiver.loop();
-}
-
 ISR(TIMER2_COMPA_vect)
 {//timer2 interrupt 1kHz toggles pin 9
-    receiver.Interrupt();
+    receiver.UpdateMotorPowerServoInterrupt();
 }
   
