@@ -14,16 +14,15 @@ void ReceiverController::setup()
     digitalWrite(powerLedPin, HIGH);
     digitalWrite(motorPowerLedPin, LOW);
     digitalWrite(motorPowerRelayPin, LOW);
-    digitalWrite(motorPowerServoPin, LOW);
 
-    //Start BlueTooth communication
-    BTSerial.begin(9600);
+    //Start Bluetooth communication
+    Serial.begin(9600);
 
     //Temp
     motorPowerStatus = true;
 }
 
-void ReceiverController::loop()
+void ReceiverController::ReadNewThrottleValueInterrupt()
 {
     if (motorPowerStatus)
     {
@@ -34,7 +33,6 @@ void ReceiverController::loop()
     {
         digitalWrite(motorPowerLedPin, LOW);
     }
-
 }
 
 void ReceiverController::ReadNewThrottleValue()
@@ -42,9 +40,10 @@ void ReceiverController::ReadNewThrottleValue()
     const char messageStart = 'S';
     const char messageEnd = 'E';
     String receivedString = "";
-    while (BTSerial.available() > 0)
+
+    while (Serial.available() > 0)
     {
-        int receivedChar = BTSerial.read();
+        int receivedChar = Serial.read();
         if (receivedChar == messageStart)
         {
             receivedString = "";
@@ -60,6 +59,7 @@ void ReceiverController::ReadNewThrottleValue()
             int newPosition = LinearizeValue(previousPosition, position);
 
             servoPosition = newPosition;
+            Serial.print(receivedString);
             receivedString = "";
         }
     }

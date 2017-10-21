@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <SoftwareSerial.h>
 #include <Servo.h>
 
 class ReceiverController
@@ -7,20 +6,17 @@ class ReceiverController
 public:
     ReceiverController();
     void setup();
-    void loop();
+    void ReadNewThrottleValueInterrupt();
     void UpdateMotorPowerServoInterrupt();
     void HallEffectSensorTriggeredInterrupt();
     void HallEffectSensorUntriggeredInterrupt();
 
 private:
-    const int bluetoothTxPin = 10;
-    const int bluetoothRxPin = 11;
-    const int powerLedPin = 3;
+    const int powerLedPin = 6;
     const int motorPowerLedPin = 4;
     const int motorPowerRelayPin = 5;
     const int motorPowerServoPin = 9;
 
-    SoftwareSerial BTSerial = SoftwareSerial(bluetoothTxPin, bluetoothRxPin);
     void ReadNewThrottleValue();
     int ConvertFromBluetoothStringToInt(String btString);
     int LinearizeValue(int previousValue, int newValue);
