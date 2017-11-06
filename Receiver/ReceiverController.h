@@ -27,4 +27,7 @@ private:
     const unsigned long hallEffectSensorOnTimeLimit = 500; //Number of micros the hall effect must be true to trigger
     volatile unsigned long hallEffectSensorOnTime = 0;
     volatile bool motorPowerStatus = false;
+
+    unsigned long timeSinceLastBtReading = 0;
+    unsigned long btReadingTimeout = 1000;
 };

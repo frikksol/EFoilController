@@ -61,7 +61,14 @@ void ReceiverController::ReadNewThrottleValue()
             servoPosition = newPosition;
             Serial.print(receivedString);
             receivedString = "";
+            timeSinceLastBtReading = millis();
         }
+    }
+    
+    if (millis() - timeSinceLastBtReading > btReadingTimeout)
+    {
+        int previousPosition = servoPosition;
+        int newPosition = LinearizeValue(previousPosition, 90);
     }
 }
 
