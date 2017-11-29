@@ -20,6 +20,7 @@ private:
     void ReadNewThrottleValue();
     int ConvertFromBluetoothStringToInt(String btString);
     int LinearizeValue(int previousValue, int newValue);
+    bool PreviousPositionMemory = false;
 
     Servo motorPowerServo;
     volatile int servoPosition = 90;

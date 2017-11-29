@@ -41,8 +41,10 @@ void ReceiverController::ReadNewThrottleValue()
     const char messageEnd = 'E';
     String receivedString = "";
 
-    while (Serial.available() > 0)
+    if (Serial.available() >=  3)
     {
+      while (Serial.available() > 0)
+      {
         int receivedChar = Serial.read();
         if (receivedChar == messageStart)
         {
@@ -59,11 +61,12 @@ void ReceiverController::ReadNewThrottleValue()
             int newPosition = LinearizeValue(previousPosition, position);
 
             servoPosition = newPosition;
-            Serial.print(receivedString);
             receivedString = "";
             timeSinceLastBtReading = millis();
         }
+      }
     }
+    
     
     if (millis() - timeSinceLastBtReading > btReadingTimeout)
     {
@@ -74,12 +77,21 @@ void ReceiverController::ReadNewThrottleValue()
 
 int ReceiverController::ConvertFromBluetoothStringToInt(String btString)
 {
-    const double minimumBtValue = 100;
-    const double maximumBtValue = 900;
-    const double maximumIntValue = 180;
-    int received = btString.toDouble();
-    double receivedConverted = ((received - minimumBtValue) / (maximumBtValue - minimumBtValue)) * maximumIntValue;
-    return (int) round(receivedConverted);
+    const int minimumBtValue = 0;
+    const int maximumBtValue = 1000;
+    const int minimumIntValue = 90;
+    const int maximumIntValue = 180;
+    int received = (int) btString.toDouble();
+    
+    int returnValue = map(received, minimumBtValue, maximumBtValue, minimumIntValue, maximumIntValue);
+
+    if(returnValue < minimumIntValue)
+    {
+      returnValue = minimumIntValue;
+    }
+
+    
+    return returnValue;
 }
 
 int ReceiverController::LinearizeValue(int previousValue, int newValue)
@@ -90,48 +102,24 @@ int ReceiverController::LinearizeValue(int previousValue, int newValue)
     const int middleValue = 90;
     const int maximumValue = 180;
 
-    //Adjustment as input is shifted wrong
-    newValue -= 10;
 
-    //Adjusting the value for limits
-    if (newValue < minimumValue + 2*deadband)
-    {
-        newValue = minimumValue;
-    }
-    if (newValue > maximumValue - 2*deadband)
-    {
-        newValue = maximumValue;
-    }
-    if((newValue > middleValue - deadband) && (newValue < middleValue + deadband))
-    {
-        newValue = middleValue;
-    }
-
-    //Limiting the increase to be within linearization maximums
-    int increase = newValue - previousValue;
-
-    if (abs(increase) > maximiumIncrease)
-    {
-        if (increase < 0)
-        {
-            increase = -maximiumIncrease;
-        }
-        else
-        {
-            increase = maximiumIncrease;
-        }
-    }
 
     //Creating the value to return
-    int returnValue = previousValue + increase;
-    if (returnValue < minimumValue)
+    int returnValue = 0;
+    int diff = abs(previousValue - newValue);
+    int diffMax = 20;
+    
+    if( (diff > diffMax) && !PreviousPositionMemory)
     {
-        returnValue = minimumValue;
+      returnValue = previousValue;
+      PreviousPositionMemory = true;
     }
-    if (returnValue > maximumValue)
+    else
     {
-        returnValue = maximumValue;
+      returnValue = newValue;
+      PreviousPositionMemory = false;
     }
+   
 
     return returnValue;
 }

@@ -30,7 +30,7 @@ void TransmitterController::loop()
     }
     else
     {
-        const int zeroSpeed = 510;
+        const int zeroSpeed = 0;
         SendThrottleReading(zeroSpeed);
     }
 }
