@@ -60,7 +60,11 @@ void ReceiverController::ReadNewThrottleValue()
             int previousPosition = servoPosition;
             int newPosition = LinearizeValue(previousPosition, position);
 
-            servoPosition = newPosition;
+            if (newPosition >= 90)
+            {
+                 servoPosition = newPosition;
+            }
+            
             receivedString = "";
             timeSinceLastBtReading = millis();
         }
@@ -72,16 +76,17 @@ void ReceiverController::ReadNewThrottleValue()
     {
         int previousPosition = servoPosition;
         int newPosition = LinearizeValue(previousPosition, 90);
+        servoPosition = newPosition;
     }
 }
 
 int ReceiverController::ConvertFromBluetoothStringToInt(String btString)
 {
-    const int minimumBtValue = 0;
+    const int minimumBtValue = 1;
     const int maximumBtValue = 1000;
     const int minimumIntValue = 90;
     const int maximumIntValue = 180;
-    int received = (int) btString.toDouble();
+    int received = btString.toInt();
     
     int returnValue = map(received, minimumBtValue, maximumBtValue, minimumIntValue, maximumIntValue);
 
@@ -96,14 +101,6 @@ int ReceiverController::ConvertFromBluetoothStringToInt(String btString)
 
 int ReceiverController::LinearizeValue(int previousValue, int newValue)
 {
-    const int maximiumIncrease = 10;
-    const int deadband = 10;
-    const int minimumValue = 0;
-    const int middleValue = 90;
-    const int maximumValue = 180;
-
-
-
     //Creating the value to return
     int returnValue = 0;
     int diff = abs(previousValue - newValue);
@@ -118,16 +115,17 @@ int ReceiverController::LinearizeValue(int previousValue, int newValue)
     {
       returnValue = newValue;
       PreviousPositionMemory = false;
-    }
-   
-
+    }  
     return returnValue;
 }
 
 void ReceiverController::UpdateMotorPowerServoInterrupt()
 {
     int position = servoPosition;
-    motorPowerServo.write(position);
+    if (servoPosition > 5)
+    {
+      motorPowerServo.write(position);
+    }
 }
 
 void ReceiverController::HallEffectSensorTriggeredInterrupt()

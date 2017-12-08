@@ -30,5 +30,5 @@ private:
     volatile bool motorPowerStatus = false;
 
     unsigned long timeSinceLastBtReading = 0;
-    unsigned long btReadingTimeout = 1000;
+    unsigned long btReadingTimeout = 500;
 };

@@ -1,10 +1,12 @@
 #include "TransmitterController.h"
 TransmitterController transmitter;
 
-void setup() {
+void setup()
+{
   transmitter.setup();
 }
 
-void loop() {
+void loop()
+{
   transmitter.loop();
 }
